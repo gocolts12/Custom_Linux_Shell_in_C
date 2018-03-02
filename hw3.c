@@ -15,6 +15,7 @@
 
 jmp_buf continueProcess;
 
+//Function to handle the correct signals
 void signalHandler(int signal) {
 	switch (signal) {
 
@@ -34,6 +35,7 @@ void signalHandler(int signal) {
 int main()
 {
 
+//If statement to catch the signal and pass to the signal handler function
   if (signal(SIGINT, signalHandler) == SIG_ERR)
   {
     printf("FAILURE");
@@ -56,6 +58,7 @@ int main()
       char filename[50];
       char mainCommand[50];
 
+      //Reset the commands array for every new set of commands
       int i = 0;
       if(numOfCommands != 0)
       {
@@ -66,6 +69,8 @@ int main()
         //input = '\0';
         numOfCommands = 0;
       }
+
+      //read in input and parse 
       fgets(input, sizeof(input), stdin);
 
       if (input[0] == '\n'){
@@ -91,6 +96,8 @@ int main()
       // }
       // printf("number of commands = %d", numOfCommands);
       fflush(stdout);
+
+      //parse for the redirection symbol as the second to last symbol 
       if (numOfCommands > 1 && strcmp(command[numOfCommands-2],">") == 0)
       {
         redirection = 0;
@@ -116,6 +123,7 @@ int main()
         command[numOfCommands - 2] = NULL;
       }
 
+      //Fork off the child
       pid_t childPid;
       if((childPid = fork()) < 0){
         perror("fork error");
@@ -143,45 +151,8 @@ int main()
 
           int filedesc = open(filename, O_RDONLY, 0777);
           dup2(filedesc, 0);
-
-          // FILE *ptr = fopen(filename, "r+");
-          // if (ptr == NULL)
-          // {
-          //   puts("Couldn't open file");
-          //   exit(-7);
-          // }
-          //
-          // numOfCommands = 1;
-          // strcpy(command[0], mainCommand);
-          //
-          // while (fgets(userInput, 500, (FILE *)ptr) != NULL)
-          // {
-          //
-          //   // printf("%s\n", mainCommand);
-          //   //printf("%s\n", userInput);
-          //
-          //
-          //   command[numOfCommands] = strtok(userInput, " \n");
-          //   numOfCommands++;
-          //
-          //   while ((command[numOfCommands] = strtok(NULL, " \n")) != NULL);
-          //   {
-          //     numOfCommands++;
-          //   }
-          //
-          //   // for (i = 0; i < numOfCommands; i++)
-          //   // {
-          //   //   printf("command[%d] = %s", i, command[i]);
-          //   // }
-          //   // printf("number of commands = %d", numOfCommands);
-          //   //
-          //   // fflush(stdout);
-          // }
-
-
-
         }
-
+	//Pass in the array of commands to execvp()
         if ( execvp(command[0], command) < 0 ) {
             printf("Unable to process command\nError: %s\n", strerror(errno));
             exit(-2);
