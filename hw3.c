@@ -13,12 +13,22 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 
-void signalHandler(int signal)
-{
-  if (signal == SIGINT)
-    printf("SIGINT handled");
-  else if (signal == SIGTSTP)
-    printf("SIGSTP handled");
+jmp_buf continueProcess;
+
+void signalHandler(int signal) {
+	switch (signal) {
+
+    case SIGTSTP:
+            printf(" SIGSTOP called\n" );
+            siglongjmp(continueProcess, 0);
+            return;
+    case SIGINT:
+            printf(" SIGINT called\n");
+            siglongjmp(continueProcess, 0);
+            return;
+		default:
+            break;
+	}
 }
 
 int main()
@@ -26,19 +36,20 @@ int main()
 
   if (signal(SIGINT, signalHandler) == SIG_ERR)
   {
-    printf("SIGINT FAILURE");
+    printf("FAILURE");
   }
   if (signal(SIGTSTP, signalHandler) == SIG_ERR)
   {
-    printf("SIGTSTP FAILURE");
+    printf("FAILURE");
   }
 
 
-
+  sigsetjmp( continueProcess, 1 );
   while (fputs("361> ", stdout) > 0)
     {
 
       char *command[50];
+      char userInput[500] = {0};
       char input[500];
       int numOfCommands = 0;
       int redirection = -1;
@@ -130,25 +141,45 @@ int main()
         else if (redirection == 2)
         {
 
-          FILE *ptr = fopen(filename, "r");
-          if (ptr == NULL)
-          {
-            puts("Couldn't open file");
-            exit(-7);
-          }
-          fgets(input, sizeof(input), ptr);
+          int filedesc = open(filename, O_RDONLY, 0777);
+          dup2(filedesc, 0);
+
+          // FILE *ptr = fopen(filename, "r+");
+          // if (ptr == NULL)
+          // {
+          //   puts("Couldn't open file");
+          //   exit(-7);
+          // }
+          //
+          // numOfCommands = 1;
+          // strcpy(command[0], mainCommand);
+          //
+          // while (fgets(userInput, 500, (FILE *)ptr) != NULL)
+          // {
+          //
+          //   // printf("%s\n", mainCommand);
+          //   //printf("%s\n", userInput);
+          //
+          //
+          //   command[numOfCommands] = strtok(userInput, " \n");
+          //   numOfCommands++;
+          //
+          //   while ((command[numOfCommands] = strtok(NULL, " \n")) != NULL);
+          //   {
+          //     numOfCommands++;
+          //   }
+          //
+          //   // for (i = 0; i < numOfCommands; i++)
+          //   // {
+          //   //   printf("command[%d] = %s", i, command[i]);
+          //   // }
+          //   // printf("number of commands = %d", numOfCommands);
+          //   //
+          //   // fflush(stdout);
+          // }
 
 
-          numOfCommands = 1;
-          command[numOfCommands] = strtok(input, " \n");
-          numOfCommands++;
 
-          while ((command[numOfCommands] = strtok(NULL, " \n")) != NULL)
-          {
-            numOfCommands++;
-          }
-
-          strcpy(command[0], mainCommand);
         }
 
         if ( execvp(command[0], command) < 0 ) {
